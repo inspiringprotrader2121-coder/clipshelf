@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import pytest
 
@@ -70,7 +71,7 @@ def test_bounds_checked():
 def test_unknown_keys_rejected_by_from_dict():
     config = Config.from_dict({"max_items": 5, "data_dir": "/tmp/x"})
     assert config.max_items == 5
-    assert str(config.data_dir) == "/tmp/x"
+    assert config.data_dir == Path("/tmp/x")
 
 
 def test_default_data_dir_on_any_os():

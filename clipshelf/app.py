@@ -37,11 +37,11 @@ def save_history(path: Path, history: ClipboardHistory) -> int:
 
 
 class App:
-    def __init__(self, config: Config | None = None) -> None:
+    def __init__(self, config: Config | None = None, clipboard=None) -> None:
         self.config = (config or Config.load()).validate()
         self.history = ClipboardHistory(max_items=self.config.max_items)
         self.history.restore(load_history(self.config.history_path))
-        self.clipboard = default_clipboard()
+        self.clipboard = clipboard if clipboard is not None else default_clipboard()
         self.watcher = ClipboardWatcher(self.clipboard, self.on_clip)
         self._running = False
 

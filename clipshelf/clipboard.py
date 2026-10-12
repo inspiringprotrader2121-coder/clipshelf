@@ -32,24 +32,39 @@ class WindowsClipboard:
     def __init__(self) -> None:
         if sys.platform != "win32":
             raise OSError("WindowsClipboard requires Windows")
+
+    @staticmethod
+    def _api():
         import ctypes
+        from ctypes import wintypes
 
-        self._ctypes = ctypes
+        user32 = ctypes.WinDLL("user32", use_last_error=True)
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
 
-    def _user32(self):
-        import ctypes
+        user32.OpenClipboard.argtypes = [wintypes.HWND]
+        user32.OpenClipboard.restype = wintypes.BOOL
+        user32.CloseClipboard.argtypes = []
+        user32.CloseClipboard.restype = wintypes.BOOL
+        user32.EmptyClipboard.argtypes = []
+        user32.EmptyClipboard.restype = wintypes.BOOL
+        user32.GetClipboardData.argtypes = [wintypes.UINT]
+        user32.GetClipboardData.restype = ctypes.c_void_p
+        user32.SetClipboardData.argtypes = [wintypes.UINT, ctypes.c_void_p]
+        user32.SetClipboardData.restype = wintypes.HANDLE
 
-        return ctypes.WinDLL("user32", use_last_error=True)
+        kernel32.GlobalAlloc.argtypes = [wintypes.UINT, ctypes.c_size_t]
+        kernel32.GlobalAlloc.restype = ctypes.c_void_p
+        kernel32.GlobalLock.argtypes = [ctypes.c_void_p]
+        kernel32.GlobalLock.restype = ctypes.c_void_p
+        kernel32.GlobalUnlock.argtypes = [ctypes.c_void_p]
+        kernel32.GlobalUnlock.restype = wintypes.BOOL
+        kernel32.GlobalFree.argtypes = [ctypes.c_void_p]
+        kernel32.GlobalFree.restype = ctypes.c_void_p
 
-    def _kernel32(self):
-        import ctypes
-
-        return ctypes.WinDLL("kernel32", use_last_error=True)
+        return ctypes, user32, kernel32
 
     def get_text(self) -> str:
-        ctypes = self._ctypes
-        user32 = self._user32()
-        kernel32 = self._kernel32()
+        ctypes, user32, kernel32 = self._api()
         if not user32.OpenClipboard(None):
             raise OSError("OpenClipboard failed")
         try:
@@ -60,32 +75,33 @@ class WindowsClipboard:
             if not pointer:
                 return ""
             try:
-                return ctypes.c_wchar_p(pointer).value or ""
+                return ctypes.wstring_at(pointer)
             finally:
                 kernel32.GlobalUnlock(handle)
         finally:
             user32.CloseClipboard()
 
     def set_text(self, text: str) -> None:
-        ctypes = self._ctypes
-        user32 = self._user32()
-        kernel32 = self._kernel32()
+        ctypes, user32, kernel32 = self._api()
         if not user32.OpenClipboard(None):
             raise OSError("OpenClipboard failed")
         try:
             user32.EmptyClipboard()
-            size = (len(text) + 1) * ctypes.sizeof(ctypes.c_wchar)
+            buffer = ctypes.create_unicode_buffer(text)
+            size = ctypes.sizeof(buffer)
             handle = kernel32.GlobalAlloc(GMEM_MOVEABLE, size)
             if not handle:
                 raise OSError("GlobalAlloc failed")
             pointer = kernel32.GlobalLock(handle)
             if not pointer:
+                kernel32.GlobalFree(handle)
                 raise OSError("GlobalLock failed")
             try:
-                ctypes.memmove(pointer, text + "\0", size)
+                ctypes.memmove(pointer, ctypes.addressof(buffer), size)
             finally:
                 kernel32.GlobalUnlock(handle)
             if not user32.SetClipboardData(CF_UNICODETEXT, handle):
+                kernel32.GlobalFree(handle)
                 raise OSError("SetClipboardData failed")
         finally:
             user32.CloseClipboard()

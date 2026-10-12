@@ -5,7 +5,7 @@ import pytest
 
 from clipshelf.__main__ import main
 from clipshelf.app import App, load_history, save_history
-from clipshelf.clipboard import ClipboardWatcher, default_clipboard
+from clipshelf.clipboard import ClipboardWatcher, MemoryClipboard, WindowsClipboard
 from clipshelf.config import Config
 
 
@@ -19,7 +19,7 @@ def wait_for(predicate, timeout=2.0):
 
 
 def test_memory_clipboard_roundtrip():
-    clip = default_clipboard()
+    clip = MemoryClipboard()
     assert clip.get_text() == ""
     clip.set_text("hello")
     assert clip.get_text() == "hello"
@@ -27,7 +27,7 @@ def test_memory_clipboard_roundtrip():
 
 def test_save_and_load_history(tmp_path):
     config = Config(data_dir=tmp_path)
-    app = App(config)
+    app = App(config, clipboard=MemoryClipboard())
     app.on_clip("first")
     app.on_clip("second")
     count = save_history(config.history_path, app.history)
@@ -55,7 +55,7 @@ def test_load_history_skips_bad_entries(tmp_path):
 
 
 def test_on_clip_respects_whitespace_policy(tmp_path):
-    app = App(Config(data_dir=tmp_path, ignore_whitespace_clips=True))
+    app = App(Config(data_dir=tmp_path, ignore_whitespace_clips=True), clipboard=MemoryClipboard())
     app.on_clip("   ")
     assert len(app.history) == 0
     app.on_clip("real")
@@ -63,7 +63,7 @@ def test_on_clip_respects_whitespace_policy(tmp_path):
 
 
 def test_watcher_reports_new_values():
-    clip = default_clipboard()
+    clip = MemoryClipboard()
     seen = []
     done = threading.Event()
     watcher = ClipboardWatcher(
@@ -77,7 +77,7 @@ def test_watcher_reports_new_values():
 
 
 def test_watcher_stop_is_idempotent():
-    clip = default_clipboard()
+    clip = MemoryClipboard()
     watcher = ClipboardWatcher(clip, lambda text: None, poll_seconds=0.02)
     watcher.start()
     watcher.stop()
@@ -86,7 +86,7 @@ def test_watcher_stop_is_idempotent():
 
 def test_app_start_stop_persists_history(tmp_path):
     config = Config(data_dir=tmp_path)
-    app = App(config)
+    app = App(config, clipboard=MemoryClipboard())
     app.start()
     try:
         app.clipboard.set_text("captured while running")
@@ -113,3 +113,12 @@ def test_cli_headless_banner_on_non_windows(tmp_path, capsys):
     config.save(tmp_path / "config.json")
     assert main(["--config", str(tmp_path / "config.json")]) == 0
     assert "Windows" in capsys.readouterr().out
+
+
+def test_windows_clipboard_requires_windows():
+    import sys
+
+    if sys.platform == "win32":
+        pytest.skip("Running on Windows")
+    with pytest.raises(OSError):
+        WindowsClipboard()
