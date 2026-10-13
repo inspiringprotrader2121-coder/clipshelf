@@ -76,3 +76,17 @@ def test_unknown_keys_rejected_by_from_dict():
 
 def test_default_data_dir_on_any_os():
     assert default_data_dir().name in ("clipshelf", ".clipshelf")
+
+
+def test_ignore_patterns_default_empty():
+    assert Config().ignore_patterns == []
+
+
+def test_ignore_patterns_validated():
+    with pytest.raises(ValueError):
+        Config(ignore_patterns=["(unclosed"]).validate()
+    Config(ignore_patterns=[r"password\s*="]).validate()
+
+
+def test_snippets_path(tmp_path):
+    assert Config(data_dir=tmp_path).snippets_path == tmp_path / "snippets.json"

@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import tempfile
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
+
+from clipshelf.rules import RuleSet
 
 APP_NAME = "clipshelf"
 DEFAULT_HOTKEY = "ctrl+shift+v"
@@ -26,12 +29,17 @@ class Config:
     popup_width: int = 560
     popup_height: int = 420
     ignore_whitespace_clips: bool = True
+    ignore_patterns: list[str] = field(default_factory=list)
     launch_on_startup: bool = True
     data_dir: Path = field(default_factory=default_data_dir)
 
     @property
     def history_path(self) -> Path:
         return self.data_dir / "history.json"
+
+    @property
+    def snippets_path(self) -> Path:
+        return self.data_dir / "snippets.json"
 
     def validate(self) -> Config:
         if self.max_items < 1 or self.max_items > 10_000:
@@ -48,10 +56,9 @@ class Config:
             raise ValueError("duplicate modifier in hotkey")
         if any(m not in VALID_MODIFIERS for m in modifiers):
             raise ValueError(f"unknown modifier in hotkey: {self.hotkey}")
-        import re
-
         if not re.match(VALID_KEY_PATTERN, key):
             raise ValueError(f"unknown key in hotkey: {self.hotkey}")
+        RuleSet(self.ignore_patterns)
         return self
 
     def to_dict(self) -> dict:

@@ -7,6 +7,7 @@ from pathlib import Path
 from clipshelf.clipboard import ClipboardWatcher, default_clipboard
 from clipshelf.config import Config
 from clipshelf.history import ClipboardHistory, ClipEntry
+from clipshelf.rules import RuleSet
 
 
 def load_history(path: Path) -> list[ClipEntry]:
@@ -43,12 +44,21 @@ class App:
         self.history.restore(load_history(self.config.history_path))
         self.clipboard = clipboard if clipboard is not None else default_clipboard()
         self.watcher = ClipboardWatcher(self.clipboard, self.on_clip)
+        self.rules = RuleSet(self.config.ignore_patterns)
         self._running = False
+        self._ignored = 0
 
     def on_clip(self, text: str) -> None:
         if self.config.ignore_whitespace_clips and not text.strip():
             return
+        if self.rules.should_ignore(text):
+            self._ignored += 1
+            return
         self.history.add(text)
+
+    @property
+    def ignored(self) -> int:
+        return self._ignored
 
     def start(self) -> None:
         self._running = True

@@ -122,3 +122,14 @@ def test_windows_clipboard_requires_windows():
         pytest.skip("Running on Windows")
     with pytest.raises(OSError):
         WindowsClipboard()
+
+
+def test_on_clip_honors_ignore_rules(tmp_path):
+    config = Config(data_dir=tmp_path, ignore_patterns=[r"password\s*="])
+    app = App(config, clipboard=MemoryClipboard())
+    app.on_clip("password = hunter2")
+    assert len(app.history) == 0
+    assert app.ignored == 1
+    app.on_clip("an ordinary clip")
+    assert len(app.history) == 1
+    assert app.ignored == 1
