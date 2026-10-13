@@ -3,11 +3,11 @@ from __future__ import annotations
 import json
 import os
 import re
-import tempfile
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from clipshelf.rules import RuleSet
+from clipshelf.storage import atomic_write_text
 
 APP_NAME = "clipshelf"
 DEFAULT_HOTKEY = "ctrl+shift+v"
@@ -77,18 +77,8 @@ class Config:
     def save(self, path: Path | None = None) -> Path:
         path = path or (self.data_dir / "config.json")
         self.validate()
-        path.parent.mkdir(parents=True, exist_ok=True)
         payload = json.dumps(self.to_dict(), indent=2, sort_keys=True)
-        fd, tmp_name = tempfile.mkstemp(dir=path.parent, prefix=".config-", suffix=".tmp")
-        try:
-            with os.fdopen(fd, "w", encoding="utf-8") as handle:
-                handle.write(payload)
-            os.replace(tmp_name, path)
-        except BaseException:
-            if os.path.exists(tmp_name):
-                os.unlink(tmp_name)
-            raise
-        return path
+        return atomic_write_text(path, payload)
 
     @classmethod
     def load(cls, path: Path | str | None = None) -> Config:

@@ -115,6 +115,8 @@ def test_from_list_skips_bad_entries():
     payload = [
         {"name": "good", "text": "ok"},
         {"name": "bad name", "text": "no"},
+        {"name": None, "text": "null name"},
+        {"name": 123, "text": "numeric name"},
         {"name": "no-text"},
         "junk",
     ]

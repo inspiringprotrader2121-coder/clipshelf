@@ -6,6 +6,8 @@ import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
+from clipshelf.storage import atomic_write_text
+
 NAME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
 MAX_TEXT_LENGTH = 100_000
 
@@ -126,10 +128,14 @@ class SnippetStore:
         for item in payload:
             if not isinstance(item, dict):
                 continue
+            name = item.get("name")
+            text = item.get("text")
+            if not isinstance(name, str) or not isinstance(text, str):
+                continue
             try:
                 snippet = Snippet(
-                    name=validate_name(str(item.get("name", ""))),
-                    text=validate_text(item.get("text", "")),
+                    name=validate_name(name),
+                    text=validate_text(text),
                     created_at=float(item.get("created_at", time.time())),
                     updated_at=float(item.get("updated_at", time.time())),
                     uses=int(item.get("uses", 0)),
@@ -154,7 +160,6 @@ def load_snippets(path: Path) -> SnippetStore:
 
 
 def save_snippets(path: Path, store: SnippetStore) -> int:
-    path.parent.mkdir(parents=True, exist_ok=True)
     payload = json.dumps(store.as_list(), indent=2, sort_keys=True)
-    path.write_text(payload, encoding="utf-8")
+    atomic_write_text(path, payload)
     return len(store)

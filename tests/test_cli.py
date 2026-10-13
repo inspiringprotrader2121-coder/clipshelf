@@ -113,6 +113,15 @@ def test_export_bad_format(tmp_path, capsys):
     assert "unsupported format" in capsys.readouterr().err
 
 
+def test_export_unwritable_output(tmp_path, capsys):
+    config, base = setup_env(tmp_path)
+    seed(config, ["clip"])
+    blocked = tmp_path / "taken"
+    blocked.mkdir()
+    assert main([*base, "export", "json", "--output", str(blocked)]) == 1
+    assert "cannot write" in capsys.readouterr().err
+
+
 def test_import_merges_and_is_idempotent(tmp_path, capsys):
     config, base = setup_env(tmp_path)
     seed(config, ["one", "two"])

@@ -8,6 +8,7 @@ from clipshelf.config import Config
 from clipshelf.history import ClipboardHistory, ClipEntry
 from clipshelf.portability import entries_from_json, entries_to_json
 from clipshelf.rules import RuleSet
+from clipshelf.storage import atomic_write_text
 
 
 def load_history(path: Path) -> list[ClipEntry]:
@@ -22,8 +23,7 @@ def load_history(path: Path) -> list[ClipEntry]:
 
 def save_history(path: Path, history: ClipboardHistory) -> int:
     snapshot = history.snapshot()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(entries_to_json(snapshot), encoding="utf-8")
+    atomic_write_text(path, entries_to_json(snapshot))
     return len(snapshot)
 
 

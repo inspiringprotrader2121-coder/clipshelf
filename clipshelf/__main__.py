@@ -13,6 +13,7 @@ from clipshelf.portability import export_entries, format_for_path, import_entrie
 from clipshelf.search import rank_entries
 from clipshelf.snippets import load_snippets, save_snippets
 from clipshelf.stats import analyze, summary_lines
+from clipshelf.storage import atomic_write_text
 
 ENTRY_WIDTH = 120
 
@@ -80,8 +81,11 @@ def cmd_export(args, config: Config) -> int:
         return 1
     if args.output:
         path = Path(args.output)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(content, encoding="utf-8")
+        try:
+            atomic_write_text(path, content)
+        except OSError as exc:
+            print(f"clipshelf: cannot write {path}: {exc}", file=sys.stderr)
+            return 1
         print(f"wrote {len(entries)} clip(s) to {path}")
     else:
         print(content, end="")
