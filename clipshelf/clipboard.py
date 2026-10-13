@@ -114,17 +114,24 @@ def default_clipboard():
 
 
 class ClipboardWatcher:
-    """Polls the clipboard and reports new text values to a callback."""
+    """Polls the clipboard and reports new text values to a callback.
+
+    After ``MAX_ERRORS`` consecutive clipboard failures the watcher stops and
+    invokes ``on_failure`` once with the last error, so the app can tell the
+    user instead of silently losing capture.
+    """
 
     def __init__(
         self,
         clipboard,
         on_change: Callable[[str], None],
         poll_seconds: float = CLIPBOARD_POLL_SECONDS,
+        on_failure: Callable[[Exception], None] | None = None,
     ) -> None:
         self._clipboard = clipboard
         self._on_change = on_change
         self._poll_seconds = poll_seconds
+        self._on_failure = on_failure
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
 
@@ -148,12 +155,17 @@ class ClipboardWatcher:
             try:
                 current = self._clipboard.get_text()
                 errors = 0
-            except OSError:
+            except OSError as exc:
                 errors += 1
                 if errors >= MAX_ERRORS:
+                    self._report_failure(exc)
                     break
                 current = None
-            if current and current != last and current.strip():
+            if current and current != last:
                 last = current
                 self._on_change(current)
             self._stop.wait(self._poll_seconds)
+
+    def _report_failure(self, exc: Exception) -> None:
+        if self._on_failure is not None:
+            self._on_failure(exc)

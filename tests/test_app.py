@@ -68,6 +68,39 @@ def test_on_clip_records_whitespace_when_policy_disabled(tmp_path):
     assert len(app.history) == 1
 
 
+class BrokenClipboard:
+    def get_text(self):
+        raise OSError("clipboard owned by another process")
+
+    def set_text(self, text):
+        raise OSError("clipboard owned by another process")
+
+
+def test_watcher_reports_failure_once():
+    failures = []
+    watcher = ClipboardWatcher(
+        BrokenClipboard(),
+        lambda text: None,
+        poll_seconds=0.01,
+        on_failure=failures.append,
+    )
+    watcher.start()
+    assert wait_for(lambda: failures)
+    watcher.stop()
+    assert len(failures) == 1
+    assert isinstance(failures[0], OSError)
+
+
+def test_app_marks_watcher_failure(tmp_path, capsys):
+    app = App(Config(data_dir=tmp_path), clipboard=BrokenClipboard())
+    app.start()
+    try:
+        assert wait_for(lambda: app.watcher_failed)
+    finally:
+        app.stop()
+    assert "clipboard watching stopped" in capsys.readouterr().err
+
+
 def test_watcher_reports_new_values():
     clip = MemoryClipboard()
     seen = []

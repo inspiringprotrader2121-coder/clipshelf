@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 from clipshelf.clipboard import ClipboardWatcher, default_clipboard
@@ -32,10 +33,13 @@ class App:
         self.history = ClipboardHistory(max_items=self.config.max_items)
         self.history.restore(load_history(self.config.history_path))
         self.clipboard = clipboard if clipboard is not None else default_clipboard()
-        self.watcher = ClipboardWatcher(self.clipboard, self.on_clip)
+        self.watcher = ClipboardWatcher(
+            self.clipboard, self.on_clip, on_failure=self._on_watcher_failure
+        )
         self.rules = RuleSet(self.config.ignore_patterns)
         self._running = False
         self._ignored = 0
+        self._watcher_failed = False
 
     def on_clip(self, text: str) -> None:
         if self.config.ignore_whitespace_clips and not text.strip():
@@ -45,9 +49,19 @@ class App:
             return
         self.history.add(text)
 
+    def _on_watcher_failure(self, exc: Exception) -> None:
+        self._watcher_failed = True
+        print(
+            f"clipshelf: clipboard watching stopped after repeated errors: {exc}", file=sys.stderr
+        )
+
     @property
     def ignored(self) -> int:
         return self._ignored
+
+    @property
+    def watcher_failed(self) -> bool:
+        return self._watcher_failed
 
     def start(self) -> None:
         self._running = True
