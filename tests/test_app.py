@@ -100,8 +100,8 @@ def test_app_start_stop_persists_history(tmp_path):
 def test_cli_list_and_once(tmp_path):
     config = Config(data_dir=tmp_path)
     config.save(tmp_path / "config.json")
-    assert main(["--config", str(tmp_path / "config.json"), "--once"]) == 0
-    assert main(["--config", str(tmp_path / "config.json"), "--list"]) == 0
+    assert main(["--config", str(tmp_path / "config.json"), "once"]) == 0
+    assert main(["--config", str(tmp_path / "config.json"), "list"]) == 0
 
 
 def test_cli_headless_banner_on_non_windows(tmp_path, capsys):

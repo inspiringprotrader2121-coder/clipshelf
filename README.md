@@ -54,6 +54,34 @@ for entry in rank("git reb", [e.text for e in history.entries]):
     print(entry)
 ```
 
+## Command line
+
+ClipShelf ships a headless command line for scripts, terminals and machines
+where the tray app is unavailable. On Windows the commands work against the
+same history file the app uses.
+
+| Command | What it does |
+| --- | --- |
+| `clipshelf` | Run the Windows tray app (headless banner elsewhere) |
+| `clipshelf list [--limit N]` | Print stored clips, newest first (`*` marks pinned) |
+| `clipshelf search QUERY [--regex] [--pinned]` | Fuzzy or regex search over history |
+| `clipshelf add [TEXT]` | Record a clip (reads stdin when TEXT is omitted) |
+| `clipshelf export {json,markdown,csv} [--output FILE] [--pinned-only]` | Export history |
+| `clipshelf import FILE [--replace]` | Merge a JSON/CSV export into history |
+| `clipshelf stats` | Totals, byte counts and most-copied clips |
+| `clipshelf snippets add/list/show/render/remove` | Manage reusable snippets |
+| `clipshelf doctor` | Environment and data-file diagnostics |
+
+```bash
+clipshelf add "deploy command I keep retyping"
+clipshelf search deploy
+clipshelf search "#\d{4}" --regex --pinned
+clipshelf export markdown --output history.md
+clipshelf snippets add sig "Best regards, John" && clipshelf snippets render sig
+```
+
+Full reference: [docs/CLI.md](docs/CLI.md).
+
 ## Development
 
 ```bash
