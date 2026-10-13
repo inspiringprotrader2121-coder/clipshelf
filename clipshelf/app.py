@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import json
-from dataclasses import asdict
 from pathlib import Path
 
 from clipshelf.clipboard import ClipboardWatcher, default_clipboard
 from clipshelf.config import Config
 from clipshelf.history import ClipboardHistory, ClipEntry
+from clipshelf.portability import entries_from_json, entries_to_json
 from clipshelf.rules import RuleSet
 
 
@@ -14,27 +13,17 @@ def load_history(path: Path) -> list[ClipEntry]:
     if not path.exists():
         return []
     try:
-        raw = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+        text = path.read_text(encoding="utf-8")
+    except OSError:
         return []
-    if not isinstance(raw, list):
-        return []
-    entries = []
-    for item in raw:
-        if not isinstance(item, dict) or not isinstance(item.get("text"), str):
-            continue
-        try:
-            entries.append(ClipEntry(**item))
-        except TypeError:
-            continue
-    return entries
+    return entries_from_json(text)
 
 
 def save_history(path: Path, history: ClipboardHistory) -> int:
+    snapshot = history.snapshot()
     path.parent.mkdir(parents=True, exist_ok=True)
-    payload = [asdict(entry) for entry in history.snapshot()]
-    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-    return len(payload)
+    path.write_text(entries_to_json(snapshot), encoding="utf-8")
+    return len(snapshot)
 
 
 class App:
