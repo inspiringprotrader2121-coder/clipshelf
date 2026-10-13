@@ -139,8 +139,7 @@ def cmd_doctor(args, config: Config) -> int:
 
 
 def cmd_once(args, config: Config) -> int:
-    app = App(config)
-    save_history(config.history_path, app.history)
+    App(config).save()
     return 0
 
 

@@ -48,10 +48,11 @@ class ClipboardHistory:
         return iter(self._entries)
 
     def add(self, text: str) -> ClipEntry:
+        """Record a clip. Whitespace-only clips are kept; truly empty text is not."""
         if not isinstance(text, str):
             raise TypeError("clip text must be a string")
         text = text.strip("\x00")
-        if not text.strip():
+        if text == "":
             raise ValueError("clip text is empty")
         if len(text) > MAX_TEXT_LENGTH:
             text = text[:MAX_TEXT_LENGTH]
@@ -96,9 +97,14 @@ class ClipboardHistory:
         return before - len(self._entries)
 
     def restore(self, entries: list[ClipEntry]) -> int:
+        """Merge *entries* into this history, newest first.
+
+        Entries already present by id **or by text** are skipped, so the
+        one-entry-per-text invariant survives imports and reloads.
+        """
         count = 0
         for entry in sorted(entries, key=lambda e: e.copied_at, reverse=True):
-            if self.get(entry.id) is None and entry.text.strip():
+            if self.get(entry.id) is None and self.get_by_text(entry.text) is None:
                 self._entries.append(entry)
                 count += 1
         self._trim()

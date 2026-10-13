@@ -26,7 +26,7 @@ def entry_from_dict(item: object) -> ClipEntry | None:
     if not isinstance(item, dict):
         return None
     text = item.get("text")
-    if not isinstance(text, str) or not text.strip():
+    if not isinstance(text, str) or not text.strip("\x00"):
         return None
     kwargs: dict = {"text": text}
     identifier = item.get("id")

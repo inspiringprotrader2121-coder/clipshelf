@@ -26,7 +26,8 @@ def sample_entry(text="hello", **overrides):
 
 
 def test_entry_from_dict_requires_text():
-    assert entries_from_payload([{"text": 5}, {"text": "   "}, "junk"]) == []
+    assert entries_from_payload([{"text": 5}, {"text": ""}, "junk"]) == []
+    assert entries_from_payload([{"text": "   "}])[0].text == "   "
 
 
 def test_entry_from_dict_coerces_fields():

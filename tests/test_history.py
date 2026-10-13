@@ -2,7 +2,7 @@ import time
 
 import pytest
 
-from clipshelf.history import MAX_TEXT_LENGTH, ClipboardHistory
+from clipshelf.history import MAX_TEXT_LENGTH, ClipboardHistory, ClipEntry
 
 
 def test_add_puts_newest_first():
@@ -22,12 +22,21 @@ def test_dedupe_moves_to_front_and_counts():
     assert len(h) == 2
 
 
-def test_empty_and_whitespace_rejected():
+def test_empty_clip_rejected():
     h = ClipboardHistory()
     with pytest.raises(ValueError):
-        h.add("   \n\t ")
+        h.add("")
+    with pytest.raises(ValueError):
+        h.add("\x00\x00")
     with pytest.raises(TypeError):
         h.add(42)
+
+
+def test_whitespace_clip_allowed():
+    h = ClipboardHistory()
+    entry = h.add("   ")
+    assert entry.text == "   "
+    assert len(h) == 1
 
 
 def test_max_items_trims_oldest_unpinned():
@@ -83,6 +92,14 @@ def test_restore_sorts_by_recency():
     target = ClipboardHistory()
     target.restore([old, new])
     assert [e.text for e in target.entries] == ["new", "old"]
+
+
+def test_restore_skips_duplicate_text_with_new_id():
+    h = ClipboardHistory()
+    h.add("same words")
+    duplicate = ClipEntry(text="same words", id="aaaaaaaa")
+    assert h.restore([duplicate]) == 0
+    assert len(h) == 1
 
 
 def test_long_text_truncated():

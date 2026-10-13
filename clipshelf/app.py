@@ -53,10 +53,24 @@ class App:
         self._running = True
         self.watcher.start()
 
-    def stop(self) -> None:
+    def stop(self) -> int:
         self._running = False
         self.watcher.stop()
-        save_history(self.config.history_path, self.history)
+        return self.save()
+
+    def save(self) -> int:
+        """Persist the history, merging in clips other processes wrote meanwhile.
+
+        The tray app keeps its history in memory, so a plain overwrite would
+        discard clips added by the CLI or another instance while it ran. The
+        file is reloaded first and entries missing from memory are merged in
+        (by id and by text) before writing.
+        """
+        merged = ClipboardHistory(max_items=self.config.max_items)
+        merged.restore(self.history.entries)
+        merged.restore(load_history(self.config.history_path))
+        self.history = merged
+        return save_history(self.config.history_path, merged)
 
     @property
     def running(self) -> bool:

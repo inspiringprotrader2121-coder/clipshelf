@@ -62,6 +62,12 @@ def test_on_clip_respects_whitespace_policy(tmp_path):
     assert len(app.history) == 1
 
 
+def test_on_clip_records_whitespace_when_policy_disabled(tmp_path):
+    app = App(Config(data_dir=tmp_path, ignore_whitespace_clips=False), clipboard=MemoryClipboard())
+    app.on_clip("   ")
+    assert len(app.history) == 1
+
+
 def test_watcher_reports_new_values():
     clip = MemoryClipboard()
     seen = []

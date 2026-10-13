@@ -231,6 +231,17 @@ def test_snippets_add_stdin(tmp_path, capsys, monkeypatch):
     assert "piped snippet" in capsys.readouterr().out
 
 
+def test_import_collapses_duplicate_texts(tmp_path, capsys):
+    config, base = setup_env(tmp_path)
+    seed(config, ["same words"])
+    source = tmp_path / "dupe.json"
+    source.write_text(json.dumps([{"text": "same words", "id": "aaaaaaaa"}]), encoding="utf-8")
+    assert main([*base, "import", str(source)]) == 0
+    assert "imported 0 new clip(s)" in capsys.readouterr().out
+    assert main([*base, "list"]) == 0
+    assert capsys.readouterr().out.count("same words") == 1
+
+
 def test_unknown_command_exits(tmp_path, capsys):
     _, base = setup_env(tmp_path)
     with pytest.raises(SystemExit) as excinfo:
