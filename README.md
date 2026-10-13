@@ -6,6 +6,8 @@ ClipShelf sits in your system tray, remembers everything you copy, and lets
 you bring any previous clip back with a single hotkey — no cloud sync, no
 account, no telemetry.
 
+Maintained by **John Harrison** ([@inspiringprotrader2121-coder](https://github.com/inspiringprotrader2121-coder)).
+
 ## Features
 
 - **Infinite clipboard history** with configurable size limit and smart dedupe
