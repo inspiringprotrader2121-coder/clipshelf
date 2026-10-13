@@ -1,5 +1,9 @@
 # ClipShelf
 
+[![CI](https://github.com/inspiringprotrader2121-coder/clipshelf/actions/workflows/ci.yml/badge.svg)](https://github.com/inspiringprotrader2121-coder/clipshelf/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
+
 A lightweight clipboard history manager for Windows.
 
 ClipShelf sits in your system tray, remembers everything you copy, and lets
@@ -11,9 +15,12 @@ Maintained by **John Harrison** ([@inspiringprotrader2121-coder](https://github.
 ## Features
 
 - **Infinite clipboard history** with configurable size limit and smart dedupe
-- **Fuzzy search** across your whole history, ranked by match quality and recency
-- **Pin important clips** so they survive history rotation
-- **Global hotkey** (`Ctrl+Shift+V`) opens the search popup from anywhere
+- **Fuzzy search** across your whole history, ranked by match quality,
+  recency, pins and copy counts — plus regex search when you need it
+- **Ignored patterns** — regex rules for secrets and noise never enter history
+- **Snippets** — named reusable text with `{date}`/`{time}` placeholders
+- **Python API, CLI and export** to JSON, Markdown or CSV; import with
+  id-level dedupe; stats and diagnostics built in
 - **100% local** — history lives in a JSON file in your own user profile
 - **Zero runtime dependencies** — pure Python standard library
 
