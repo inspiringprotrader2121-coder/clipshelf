@@ -13,6 +13,7 @@ anywhere, wrapped in a thin Windows layer.
 | `clipshelf.snippets` | `Snippet` and `SnippetStore`: named reusable text with `{date}`, `{time}`, `{datetime}` rendering |
 | `clipshelf.stats` | `analyze()` and `summary_lines()`: totals, byte counts, most-copied clips |
 | `clipshelf.portability` | Validation and (de)serialisation for JSON, Markdown and CSV exports |
+| `clipshelf.storage` | `atomic_write_text()`: temp file + rename, used by every writer (config, history, snippets, CLI exports) |
 | `clipshelf.config` | `Config` dataclass, validation, atomic JSON save, platform data dirs |
 | `clipshelf.clipboard` | `MemoryClipboard`, the Win32 `WindowsClipboard` (ctypes) and the polling `ClipboardWatcher` |
 | `clipshelf.app` | `App`: wires config, history, rules, watcher; `load_history`/`save_history` |
@@ -36,6 +37,23 @@ clipboard ──poll──▶ ClipboardWatcher ──▶ App.on_clip
 Every entry point (tray app, CLI) goes through the same history and
 portability code, so a clip recorded by the app is identical to one added
 with `clipshelf add`.
+
+## Concurrency and failure handling
+
+- **Merging on save.** `App.save()` reloads the history file and merges in
+  entries the running app does not know about (clips added by the CLI or
+  another instance) before writing. Entries are deduped by id *and* by text,
+  so the one-entry-per-text invariant holds across imports and reloads.
+- **Atomic writes.** Every file write goes through
+  `clipshelf.storage.atomic_write_text`, so a reader never sees a
+  half-written file and a failed write leaves the previous content intact.
+- **Whitespace policy.** `ClipboardHistory.add()` accepts whitespace-only
+  clips; the `ignore_whitespace_clips` config decides in `App.on_clip`
+  whether they are recorded.
+- **Watcher failure.** After `MAX_ERRORS` consecutive clipboard errors the
+  `ClipboardWatcher` stops and calls its `on_failure` callback; `App` prints
+  a diagnostic and exposes `app.watcher_failed` so capture loss is visible
+  instead of silent.
 
 ## Files on disk
 

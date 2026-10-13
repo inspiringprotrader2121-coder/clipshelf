@@ -6,15 +6,16 @@
 
 A lightweight clipboard history manager for Windows.
 
-ClipShelf sits in your system tray, remembers everything you copy, and lets
-you bring any previous clip back with a single hotkey — no cloud sync, no
-account, no telemetry.
+ClipShelf records everything you copy into a local, searchable history — no
+cloud sync, no account, no telemetry. The core engine, the Python API and the
+headless command line are complete today; the tray app with its hotkey popup
+is in development (see [Roadmap](#roadmap)).
 
 Maintained by **John Harrison** ([@inspiringprotrader2121-coder](https://github.com/inspiringprotrader2121-coder)).
 
 ## Features
 
-- **Infinite clipboard history** with configurable size limit and smart dedupe
+- **Clipboard history** with configurable size limit and smart dedupe
 - **Fuzzy search** across your whole history, ranked by match quality,
   recency, pins and copy counts — plus regex search when you need it
 - **Ignored patterns** — regex rules for secrets and noise never enter history
@@ -26,8 +27,10 @@ Maintained by **John Harrison** ([@inspiringprotrader2121-coder](https://github.
 
 ## Installation
 
+Until the PyPI release lands, install from the repository:
+
 ```bash
-pip install clipshelf
+pip install "clipshelf @ git+https://github.com/inspiringprotrader2121-coder/clipshelf"
 ```
 
 Or run from source:
@@ -35,20 +38,15 @@ Or run from source:
 ```bash
 git clone https://github.com/inspiringprotrader2121-coder/clipshelf.git
 cd clipshelf
-python -m clipshelf
+python -m clipshelf --help
 ```
 
 ## Usage
 
-| Hotkey | Action |
-| --- | --- |
-| `Ctrl+Shift+V` | Open clipboard history popup |
-| `Ctrl+C` inside popup | Copy selected entry back to clipboard |
-| `Ctrl+P` inside popup | Pin / unpin selected entry |
-| `Esc` | Close popup |
-
-On launch, ClipShelf restores your history from
-`%APPDATA%\clipshelf\history.json` and starts watching the clipboard.
+On Windows, running `clipshelf` with no command starts clipboard capture and
+saves history to `%APPDATA%\clipshelf\history.json` (stop with `Ctrl+C`).
+On other platforms the same engine is available through the command line and
+the Python API.
 
 ```python
 from clipshelf import ClipboardHistory, rank
@@ -61,15 +59,28 @@ for entry in rank("git reb", [e.text for e in history.entries]):
     print(entry)
 ```
 
+### Tray UI (in development)
+
+The tray app with a `Ctrl+Shift+V` search popup is not implemented yet. The
+hotkeys below describe the intended behaviour and will be wired up in an
+upcoming release:
+
+| Planned hotkey | Action |
+| --- | --- |
+| `Ctrl+Shift+V` | Open clipboard history popup |
+| `Ctrl+C` inside popup | Copy selected entry back to clipboard |
+| `Ctrl+P` inside popup | Pin / unpin selected entry |
+| `Esc` | Close popup |
+
 ## Command line
 
 ClipShelf ships a headless command line for scripts, terminals and machines
-where the tray app is unavailable. On Windows the commands work against the
-same history file the app uses.
+where the tray app is unavailable. It works against the same history file
+the app uses.
 
 | Command | What it does |
 | --- | --- |
-| `clipshelf` | Run the Windows tray app (headless banner elsewhere) |
+| `clipshelf` | Start clipboard capture on Windows (headless banner elsewhere) |
 | `clipshelf list [--limit N]` | Print stored clips, newest first (`*` marks pinned) |
 | `clipshelf search QUERY [--regex] [--pinned]` | Fuzzy or regex search over history |
 | `clipshelf add [TEXT]` | Record a clip (reads stdin when TEXT is omitted) |
@@ -102,9 +113,11 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow.
 
 ## Roadmap
 
-- [ ] Windows 11 fluent styling for the search popup
+- [ ] Tray icon with a `Ctrl+Shift+V` search popup (Win32, no dependencies)
+- [ ] Windows 11 fluent styling for the popup
+- [ ] Launch on startup
 - [ ] Image and file-copy support
-- [ ] Optional tray quick-menu of the last 10 clips
+- [ ] PyPI release (`pip install clipshelf`)
 - [ ] MSI installer via PyInstaller + Inno Setup
 
 ## License

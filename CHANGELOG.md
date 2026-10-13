@@ -5,6 +5,32 @@ All notable changes to ClipShelf are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.2.1] - 2026-10-13
+
+### Fixed
+
+- Saving from the running app no longer overwrites clips added by the CLI or
+  another instance: the history file is reloaded and merged before writing
+- Imports and restores now skip duplicate **texts** as well as duplicate ids,
+  preserving the one-entry-per-text invariant
+- The `ignore_whitespace_clips` setting now truly controls blank-clip
+  recording (before, blanks were dropped even when the setting was off, and
+  could raise when they reached the engine)
+- Clipboard watching reports failure after repeated clipboard errors instead
+  of stopping silently
+- Snippet loading no longer turns a JSON `null` name into a snippet literally
+  named "None"
+- `clipshelf export --output` reports unwritable destinations cleanly instead
+  of raising a traceback
+
+### Changed
+
+- All file writes (config, history, snippets, exports) go through one atomic
+  write helper, `clipshelf.storage.atomic_write_text`
+- Documentation now distinguishes the implemented engine/CLI from the
+  in-development tray UI, and installation points at the repository until the
+  PyPI release lands
+
 ## [0.2.0] - 2026-10-13
 
 ### Added
